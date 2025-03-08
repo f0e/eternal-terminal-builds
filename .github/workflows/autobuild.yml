@@ -1,20 +1,38 @@
 name: Build and Release
 
 on:
-  push:
-    branches: [main]
-  workflow_dispatch: # Allows manual triggering
+  schedule:
+    - cron: "0 0 * * *" # Check every day
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
-    name: Build
     runs-on: ubuntu-latest
-
     steps:
-      - name: Check out your repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - name: Get latest commit SHA
+        run: |
+          LATEST_COMMIT=$(curl -s https://api.github.com/repos/MisterTea/EternalTerminal/commits/master | jq -r .sha)
+          SHORT_COMMIT=${LATEST_COMMIT:0:7}
+          echo "LATEST_COMMIT_SHORT=$SHORT_COMMIT" >> $GITHUB_ENV
+          echo "RELEASE_TAG=et-commit-$SHORT_COMMIT" >> $GITHUB_ENV
+
+      - name: Check if already built
+        id: check_build
+        run: |
+          if curl -s --head --fail https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ env.RELEASE_TAG }}; then
+            echo "BUILD=false" >> $GITHUB_ENV
+            echo "This commit is already built. Skipping."
+          else
+            echo "BUILD=true" >> $GITHUB_ENV
+          fi
 
       - name: Install dependencies
+        if: env.BUILD == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -31,15 +49,16 @@ jobs:
             pkg-config
 
       - name: Clone Eternal Terminal
-        run: |
-          git clone --recurse-submodules --depth 1 https://github.com/MisterTea/EternalTerminal.git
+        if: env.BUILD == 'true'
+        run: git clone --recurse-submodules --depth 1 --single-branch https://github.com/MisterTea/EternalTerminal.git
 
       - name: Bootstrap vcpkg
+        if: env.BUILD == 'true'
         working-directory: EternalTerminal
-        run: |
-          ./external/vcpkg/bootstrap-vcpkg.sh
+        run: ./external/vcpkg/bootstrap-vcpkg.sh
 
       - name: Configure CMake
+        if: env.BUILD == 'true'
         working-directory: EternalTerminal
         run: |
           mkdir -p build
@@ -47,23 +66,29 @@ jobs:
           cmake -DCMAKE_TOOLCHAIN_FILE=../external/vcpkg/scripts/buildsystems/vcpkg.cmake ../
 
       - name: Build
+        if: env.BUILD == 'true'
         working-directory: EternalTerminal/build
         run: make -j$(nproc)
 
       - name: Create installation directory
+        if: env.BUILD == 'true'
         run: mkdir -p install
 
       - name: Install
+        if: env.BUILD == 'true'
         working-directory: EternalTerminal/build
-        run: |
-          DESTDIR=${GITHUB_WORKSPACE}/install make install
+        run: DESTDIR=${GITHUB_WORKSPACE}/install make install
 
-      - name: Package for AMD64
-        run: |
-          tar -czvf et-linux-amd64.tar.gz -C install .
+      - name: Package build
+        if: env.BUILD == 'true'
+        run: tar -czvf et-linux-amd64-${{ env.LATEST_COMMIT_SHORT }}.tar.gz -C install/usr/bin .
 
-      - name: Upload AMD64 build artifact
-        uses: actions/upload-artifact@v4
+      - name: Create/update release
+        if: env.BUILD == 'true'
+        uses: softprops/action-gh-release@v1
         with:
-          name: et-linux-amd64
-          path: et-linux-amd64.tar.gz
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: "Eternal Terminal Build ${{ env.LATEST_COMMIT_SHORT }}"
+          body: "Static build of Eternal Terminal from commit ${{ env.LATEST_COMMIT_SHORT }} for Linux (AMD64)"
+          files: et-linux-amd64-${{ env.LATEST_COMMIT_SHORT }}.tar.gz
+          token: ${{ secrets.GITHUB_TOKEN }}
