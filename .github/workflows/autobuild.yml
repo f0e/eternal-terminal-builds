@@ -88,6 +88,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ env.RELEASE_TAG }}
-          name: "Eternal Terminal Build ${{ env.LATEST_COMMIT_SHORT }}"
+          name: "Eternal Terminal ${{ env.LATEST_COMMIT_SHORT }}"
+          body: "[View source code](https://github.com/MisterTea/EternalTerminal/commit/${{ env.LATEST_COMMIT_SHORT }})"
           files: et-linux-amd64-${{ env.LATEST_COMMIT_SHORT }}.tar.gz
           token: ${{ secrets.GITHUB_TOKEN }}
