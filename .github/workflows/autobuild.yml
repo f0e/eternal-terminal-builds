@@ -81,7 +81,7 @@ jobs:
 
       - name: Package build
         if: env.BUILD == 'true'
-        run: tar -czvf et-linux-amd64-${{ env.LATEST_COMMIT_SHORT }}.tar.gz -C install/usr/bin .
+        run: tar -czvf et-linux-amd64.tar.gz -C install/usr/bin .
 
       - name: Create/update release
         if: env.BUILD == 'true'
@@ -90,5 +90,5 @@ jobs:
           tag_name: ${{ env.RELEASE_TAG }}
           name: "Eternal Terminal ${{ env.LATEST_COMMIT_SHORT }}"
           body: "[View source code](https://github.com/MisterTea/EternalTerminal/commit/${{ env.LATEST_COMMIT_SHORT }})"
-          files: et-linux-amd64-${{ env.LATEST_COMMIT_SHORT }}.tar.gz
+          files: et-linux-amd64.tar.gz
           token: ${{ secrets.GITHUB_TOKEN }}
