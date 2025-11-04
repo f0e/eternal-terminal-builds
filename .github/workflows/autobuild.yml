@@ -92,3 +92,11 @@ jobs:
           body: "[View source code](https://github.com/MisterTea/EternalTerminal/commit/${{ env.LATEST_COMMIT_SHORT }})"
           files: et-linux-amd64.tar.gz
           token: ${{ secrets.GITHUB_TOKEN }}
+
+  workflow-keepalive: # https://github.com/liskin/gh-workflow-keepalive
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - uses: liskin/gh-workflow-keepalive@v1
