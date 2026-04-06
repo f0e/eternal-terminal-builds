@@ -25,7 +25,8 @@ jobs:
       - name: Check if already built
         id: check_build
         run: |
-          if curl -s --head --fail https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ env.RELEASE_TAG }}; then
+          EXISTING=$(curl -s "https://api.github.com/repos/${{ github.repository }}/releases" | jq -r '.[].tag_name' | grep -F "${{ env.LATEST_COMMIT_SHORT }}" || true)
+          if [ -n "$EXISTING" ]; then
             echo "BUILD=false" >> $GITHUB_ENV
             echo "This commit is already built. Skipping."
           else
