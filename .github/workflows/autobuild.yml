@@ -17,9 +17,12 @@ jobs:
       - name: Get latest commit SHA
         run: |
           LATEST_COMMIT=$(curl -s https://api.github.com/repos/MisterTea/EternalTerminal/commits/master | jq -r .sha)
-          SHORT_COMMIT=${LATEST_COMMIT:0:7}
-          echo "LATEST_COMMIT_SHORT=$SHORT_COMMIT" >> $GITHUB_ENV
-          echo "RELEASE_TAG=et-commit-$SHORT_COMMIT" >> $GITHUB_ENV
+          LATEST_COMMIT_SHORT=${LATEST_COMMIT:0:7}
+          DATE=$(date -u +%Y%m%d)
+
+          echo "LATEST_COMMIT_SHORT=$LATEST_COMMIT_SHORT" >> $GITHUB_ENV
+          echo "RELEASE_TAG=et-commit-${LATEST_COMMIT_SHORT}" >> $GITHUB_ENV
+          echo "RELEASE_NAME=${DATE} - Eternal Terminal ${LATEST_COMMIT_SHORT}" >> $GITHUB_ENV
 
       - name: Check if already built
         id: check_build
@@ -88,7 +91,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ env.RELEASE_TAG }}
-          name: "Eternal Terminal ${{ env.LATEST_COMMIT_SHORT }}"
+          name: ${{ env.RELEASE_NAME }}
           body: "[View source code](https://github.com/MisterTea/EternalTerminal/commit/${{ env.LATEST_COMMIT_SHORT }})"
           files: et-linux-amd64.tar.gz
           token: ${{ secrets.GITHUB_TOKEN }}
