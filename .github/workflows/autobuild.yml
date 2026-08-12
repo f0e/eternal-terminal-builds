@@ -38,18 +38,7 @@ jobs:
         if: env.BUILD == 'true'
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            cmake \
-            build-essential \
-            libboost-dev \
-            libssl-dev \
-            libprotobuf-dev \
-            protobuf-compiler \
-            curl \
-            zip \
-            unzip \
-            tar \
-            pkg-config
+          sudo apt-get install -y curl zip unzip tar libssl-dev libcurl4-openssl-dev libunwind-dev git cmake ninja-build gdb protobuf-compiler libsodium-dev libgflags-dev libprotobuf-dev libutempter-dev g++ libtool libtool-bin autoconf autoconf-archive automake
 
       - name: Clone Eternal Terminal
         if: env.BUILD == 'true'
